@@ -6,7 +6,7 @@ import "dotenv/config";
 import budgetRoutes from "./Routes/budget.routes.js";
 import expenseRoutes from "./Routes/expense.routes.js";
 
-const dburl = process.env.Railway_Mongo_Uri || "mongodb://mongo:LcIvxrERnKWOzZvYGhZLcOgWlMUToeZt@kodama.proxy.rlwy.net:55528";
+const dburl = process.env.Railway_Mongo_Uri;
 
 const app = express();
 app.use(cors());
