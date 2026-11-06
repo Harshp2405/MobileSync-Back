@@ -1,25 +1,18 @@
-import express from "express";
 import mongoose from "mongoose";
-import cors from "cors";
 import "dotenv/config";
-
-import budgetRoutes from "./Routes/budget.routes.js";
-import expenseRoutes from "./Routes/expense.routes.js";
+import app from "./App.js";
 
 const dburl = process.env.Railway_Mongo_Uri;
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-mongoose.connect(dburl)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.error("MongoDB Connection Error:", err));
-
-app.use("/budget", budgetRoutes);
-app.use("/expenses", expenseRoutes);
-
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, "0.0.0.0", () => {
+
+try {
+  if (!dburl) throw new Error("Railway_Mongo_Uri is required");
+  await mongoose.connect(dburl);
+  console.log("MongoDB Connected");
+  app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on port ${PORT}`);
-});
+  });
+} catch (error) {
+  console.error("MongoDB Connection Error:", error);
+  process.exitCode = 1;
+}
