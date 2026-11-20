@@ -2,11 +2,11 @@ import mongoose from "mongoose";
 import "dotenv/config";
 import app from "./App.js";
 
-const dburl = process.env.Railway_Mongo_Uri;
+const dburl = process.env.MONGODB_URI;
 const PORT = process.env.PORT || 5000;
 
 try {
-  if (!dburl) throw new Error("Railway_Mongo_Uri is required");
+  if (!dburl) throw new Error("MONGODB_URI is required");
   await mongoose.connect(dburl);
   console.log("MongoDB Connected");
   app.listen(PORT, "0.0.0.0", () => {

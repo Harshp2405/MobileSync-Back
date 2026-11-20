@@ -6,7 +6,7 @@ import mongoose from "mongoose";
 import app from "../App.js";
 import { entities, entity } from "./fixtures.js";
 
-// Never load .env or use Railway_Mongo_Uri. Only this randomly named local test database is removed.
+// Never load .env or use MONGODB_URI. Only this randomly named local test database is removed.
 const uri = process.env.TEST_MONGO_URI || "mongodb://127.0.0.1:27017";
 const dbName = `expense_backend_test_${randomUUID().replaceAll("-", "")}`;
 let server;
