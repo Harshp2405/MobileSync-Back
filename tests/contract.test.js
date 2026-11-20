@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { IncomingMessage, ServerResponse } from "node:http";
+import { Socket } from "node:net";
 import path from "node:path";
 import { afterEach, mock, test } from "node:test";
 import mongoose from "mongoose";
+import app from "../App.js";
 import { entities, entity } from "./fixtures.js";
 import { errorHandler } from "../Utils/http.js";
 import { parseSince, runSyncBatch, buildSyncFilter } from "../Utils/sync.js";
@@ -388,4 +391,45 @@ test("name-based cascades target the correct account/category and preserve unrel
     ["expenses", "updateMany", { category: "Food", subcategory: "Meals" }, { $set: { subcategory: "Lunch" } }],
     ["expenses", "updateMany", { category: "Food", subcategory: "Lunch" }, { $set: { subcategory: null } }],
   ]);
+});
+
+// Dispatch through the real Express app using in-memory request/response objects (no socket).
+const requestApp = (method, url) => new Promise((resolve, reject) => {
+  const req = new IncomingMessage(new Socket());
+  Object.assign(req, { method, url, headers: {} });
+  const res = new ServerResponse(req);
+  res.end = (chunk) => {
+    resolve({ status: res.statusCode, headers: res.getHeaders(), body: chunk ? String(chunk) : "" });
+    return res;
+  };
+  app(req, res, reject);
+});
+
+test("GET and HEAD /health are uncached liveness probes that never query the database", async () => {
+  const touched = [];
+  for (const { Model } of entities) {
+    for (const operation of ["find", "findOne", "countDocuments", "exists"]) {
+      mock.method(Model, operation, () => { touched.push(`${Model.modelName}.${operation}`); });
+    }
+  }
+
+  const get = await requestApp("GET", "/health");
+  assert.equal(get.status, 200);
+  assert.equal(get.headers["cache-control"], "no-store");
+  const payload = JSON.parse(get.body);
+  assert.equal(payload.status, "ok");
+  assert.equal(payload.database, "disconnected");
+  assert.ok(Number.isInteger(payload.uptime) && payload.uptime >= 0);
+
+  Object.defineProperty(mongoose.connection, "readyState", { configurable: true, get: () => 1 });
+  try {
+    assert.equal(JSON.parse((await requestApp("GET", "/health")).body).database, "connected");
+  } finally {
+    delete mongoose.connection.readyState;
+  }
+
+  const head = await requestApp("HEAD", "/health");
+  assert.equal(head.status, 200);
+  assert.equal(head.body, "");
+  assert.deepEqual(touched, []);
 });

@@ -8,10 +8,12 @@ import accountRoutes from "./Routes/account.routes.js";
 import transferRoutes from "./Routes/transfer.routes.js";
 import categoryRoutes from "./Routes/category.routes.js";
 import subcategoryRoutes from "./Routes/subcategory.routes.js";
+import healthRoutes from "./Routes/health.routes.js";
 import { errorHandler } from "./Utils/http.js";
 
 const app = express();
 app.use(cors());
+app.use("/health", healthRoutes);
 app.use(express.json({ limit: "5mb" }));
 
 app.use("/budget", budgetRoutes);
